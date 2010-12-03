@@ -11,58 +11,56 @@
 #  In order to do this it simply keeps the window up for a few seconds
 #  in case anyone needs to look at it
 
+# Copyright (C) 2010 Tim Jenness
 # Copyright (C) 2000 Tim Jenness and the Particle Physics and Astronomy
 # Research Council. All Rights Reserved.
 
 use strict;
-use Test;
+use Test::More tests => 13;
 
-BEGIN { plan tests => 13 }
-
-use Tk;
-use Tk::TextANSIColor;
 use Term::ANSIColor;
+use Tk;
 
-
-ok(1);
-
+require_ok( "Tk::TextANSIColor" );
 
 # Create new Tk
 
-my $MW = MainWindow->new();
+SKIP: {
 
-ok( defined $MW );
+my $MW = eval { MainWindow->new() };
 
-# Abort if this is not working
+# If we have not managed to get a MainWindow that probably
+# means we are running headless so skip all remaining tests
+skip("Unable to launch Tk MainWindow. Is there a display attached?", 12)
+  unless defined $MW;
 
-die "Unable to create Tk object. Not on a graphics display??"
-	unless defined $MW;
+ok( defined $MW, "MainWindow" );
 
 # Create a simple text wiget
 
 my $text = $MW->TextANSIColor->pack;
 
-ok( defined $text );
+isa_ok( $text, "Tk::TextANSIColor" );
 
 # We dont want to run an event loop - just do an update
 $MW->update;
 
 # Some normal text
-doprint("Normal text, no ANSI codes\n");
-ok(1);
+doprint($text, "Normal text, no ANSI codes\n");
+ok(1, "print text without crashing" );
 
 # Some colored text
 
 foreach (qw/ red green blue magenta yellow cyan bold underline /) {
-  doprint( colored("This is a test of $_\n", "$_") );
-  ok(1);
+  doprint( $text, colored("This is a test of $_\n", "$_") );
+  ok(1, "colored text");
 }
 
 # Now try a tie
 use vars qw/ *HDL /;
 my $tie = tie(*HDL, ref($text), $text);
 
-ok(defined $tie);
+ok(defined $tie, "Got Tie");
 
 # Cant yet test the return status of a print from a tied text widget
 # since it always returns undef (as of v800.021).
@@ -74,6 +72,7 @@ $tie->update;
 
 sleep 3;
 
+}
 
 exit;
 
@@ -82,6 +81,7 @@ exit;
 # could do it with a tied filehandle instead
 
 sub doprint {
+  my $text = shift;
   my $str = shift;
   my $ret = $text->insert('end', $str);
   $text->update;

@@ -1,33 +1,31 @@
 #!/usr/local/bin/perl -w
 
 # Test the getansi function
-
 use strict;
-use Test;
+use Test::More tests => 5;
 
-BEGIN { plan tests => 5 }
-
-use Tk;
-use Tk::TextANSIColor;
 use Term::ANSIColor;
+use Tk;
 
-ok(1);
+require_ok( "Tk::TextANSIColor" );
 
 # Create new Tk
 
-my $MW = MainWindow->new();
+SKIP: {
 
-ok( defined $MW );
+my $MW = eval { MainWindow->new() };
 
-# Abort if this is not working
+# If we have not managed to get a MainWindow that probably
+# means we are running headless so skip all remaining tests
+skip("Unable to launch Tk MainWindow. Is there a display attached?", 4)
+  unless defined $MW;
 
-die "Unable to create Tk object. Not on a graphics display??"
-        unless defined $MW;
+ok( defined $MW, "Mainwindow" );
 
 # Create a simple text wiget
 
 my $text = $MW->TextANSIColor->pack;
-ok(defined $text);
+isa_ok($text, "Tk::TextANSIColor" );
 
 # We don't care if the window never appears. We are
 # just checking the contents
@@ -51,9 +49,11 @@ my $res = $text->getansi('1.0','end');
 chomp($res); # remove additional newline
 
 # Compare the two - should be identical
-ok($res,$string);
+is($res,$string, "Compare strings");
 
 # A simple get should give the same as a stripped input string
 $res = $text->get('1.0','end');
 chomp($res);
-ok($res,$nocode);
+is($res,$nocode, "Compare stripped");
+
+}
